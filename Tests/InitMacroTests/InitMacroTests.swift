@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(InitMacro)
 import InitMacro
+#endif
 #if canImport(InitMacroImplementation)
 /// Macros targets can't be imported when the package is ran in systems other than macOS
 @testable import InitMacroImplementation

@@ -87,7 +87,7 @@ struct InitMacro: MemberMacro {
             bodyBuilder: { initBody }
         )
 
-        return [DeclSyntax(initDeclSyntax)]
+        return ["\(raw: initDeclSyntax)"]
     }
 
     private static func makeData(
@@ -163,8 +163,8 @@ struct InitMacro: MemberMacro {
                 let memberAccessControl = getAccessControls("", syntax.modifiers)
                 let memberAccessControlPrefix = (memberAccessControl.contains("static") ? "S" : "s") + "elf"
 
-                let isComputedProperty = pattern.accessControl?.is(CodeBlockSyntax.self) == true
-                let isUsingAccessControls = pattern.accessControl?.is(AccessControlBlockSyntax.self) == true
+                let isComputedProperty = pattern.accessor?.is(CodeBlockSyntax.self) == true
+                let isUsingAccessControls = pattern.accessor?.is(AccessorBlockSyntax.self) == true
                 if !isComputedProperty, !isUsingAccessControls {
                     parameters.append(parameter)
                     assignments.append("\(memberAccessControlPrefix).\(identifier) = \(identifier)")
