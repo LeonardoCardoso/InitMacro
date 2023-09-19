@@ -471,4 +471,38 @@ final class InitMacroTests: XCTestCase {
         )
         #endif
     }
+    
+    func test_initMacro_implicitDefaults() throws {
+        #if canImport(InitMacroImplementation)
+        assertMacroExpansion(
+            """
+            @Init
+            struct RandomPoint {
+                let x: Int = 5
+                var y: Int
+                var displayResult: Bool = true
+            }
+            """,
+            expandedSource:
+            """
+
+            struct RandomPoint {
+                let x: Int = 5
+                var y: Int
+                var displayResult: Bool = true
+                init(
+                    x: Int = 5,
+                    y: Int,
+                    displayResult: Bool = true
+                ) {
+                    self.x = x
+                    self.y = y
+                    self.displayResult = displayResult
+                }
+            }
+            """,
+            macros: macros
+        )
+        #endif
+    }
 }

@@ -158,6 +158,8 @@ struct InitMacro: MemberMacro {
                 var parameter = "\(identifierPrefix)\(identifier): \(typePrefix)\(type)"
                 if let defaultValue = defaults["\(identifier)"] {
                     parameter += " = " + "\(defaultValue)"
+                } else if let initializer = pattern.initializer {
+                    parameter += "\(initializer)"
                 }
 
                 let memberAccessControl = getAccessControls("", syntax.modifiers)
