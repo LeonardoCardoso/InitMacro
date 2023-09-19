@@ -147,7 +147,8 @@ struct InitMacro: MemberMacro {
                let bindings = syntax.bindings.as(PatternBindingListSyntax.self),
                let pattern = bindings.first?.as(PatternBindingSyntax.self),
                let identifier = (pattern.pattern.as(IdentifierPatternSyntax.self))?.identifier,
-               let type = (pattern.typeAnnotation?.as(TypeAnnotationSyntax.self))?.type {
+               let type = (pattern.typeAnnotation?.as(TypeAnnotationSyntax.self))?.type,
+               !(syntax.bindingKeyword.tokenKind == .keyword(.let) && pattern.initializer != nil) {
 
                 let shouldUnderscoreParameter = wildcards.contains("\(identifier)")
                 let identifierPrefix = "\(shouldUnderscoreParameter ? "_ " : "")"

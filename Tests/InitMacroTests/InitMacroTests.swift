@@ -491,11 +491,9 @@ final class InitMacroTests: XCTestCase {
                 var y: Int
                 var displayResult: Bool = true
                 init(
-                    x: Int = 5,
                     y: Int,
                     displayResult: Bool = true
                 ) {
-                    self.x = x
                     self.y = y
                     self.displayResult = displayResult
                 }
