@@ -61,46 +61,51 @@ struct InitMacro: MemberMacro {
 
         var parameters = [String]()
         var assignments = [String]()
-        var accessControlType = false
+        var accessorType = false
 
         if let decl = declaration.as(ClassDeclSyntax.self) {
-            (parameters, assignments, accessControlType) = makeData(
-                getAccessControls("", decl.modifiers),
+            (parameters, assignments, accessorType) = makeData(
+                getModifiers("", decl.modifiers),
                 decl.memberBlock.members,
                 decl.attributes
             )
         }
         if let decl = declaration.as(StructDeclSyntax.self) {
-            (parameters, assignments, accessControlType) = makeData(
-                getAccessControls("", decl.modifiers),
+            (parameters, assignments, accessorType) = makeData(
+                getModifiers("", decl.modifiers),
                 decl.memberBlock.members,
                 decl.attributes
             )
         }
 
-        let initBody: ExprSyntax = "\(raw: assignments.joined(separator: "\n"))"
+        let initBody: [CodeBlockItemListSyntax.Element] = assignments.enumerated().map { index, assignment in
+            if index == 0 {
+                return "\(raw: assignment)"
+            } else {
+                return "\n\(raw: assignment)"
+            }
+        }
 
         let initDeclSyntax = try InitializerDeclSyntax(
-            PartialSyntaxNodeString(
-                stringLiteral: "\(accessControlType ? "public " : "")init(\n\(parameters.joined(separator: ",\n"))\n)"
+            SyntaxNodeString(
+                stringLiteral: "\(accessorType ? "public " : "")init(\n\(parameters.joined(separator: ",\n"))\n)"
             ),
-            bodyBuilder: { initBody }
+            bodyBuilder: { .init(initBody) }
         )
 
         return ["\(raw: initDeclSyntax)"]
     }
 
     private static func makeData(
-        _ accessControlPrefix: String,
-        _ members: MemberDeclListSyntax,
+        _ accessorPrefix: String,
+        _ members: MemberBlockItemListSyntax,
         _ attributes: AttributeListSyntax?
     ) -> ([String], [String], Bool) {
         var defaults = [String: String]()
         var wildcards = [String]()
 
         // Get attributes for Init macro
-        let attributes = getAttributes(attributes, "Init")?
-            .argument?.as(TupleExprElementListSyntax.self)
+        let attributes = getAttributes(attributes, "Init")?.arguments?.as(LabeledExprListSyntax.self)
 
         // Analyse the `defaults` parameter
         if let defaultsAttributes = attributes?
@@ -108,10 +113,10 @@ struct InitMacro: MemberMacro {
             .expression.as(DictionaryExprSyntax.self)?
             .content.as(DictionaryElementListSyntax.self) {
             for attribute in defaultsAttributes {
-                if let key = attribute.keyExpression.as(StringLiteralExprSyntax.self)?
+                if let key = attribute.key.as(StringLiteralExprSyntax.self)?
                     .segments.first?.as(StringSegmentSyntax.self)?
                     .content {
-                    defaults["\(key)"] = "\(attribute.valueExpression)"
+                    defaults["\(key.text)"] = "\(attribute.value)"
                 }
             }
         }
@@ -131,12 +136,11 @@ struct InitMacro: MemberMacro {
         }
 
         // Analyse the `public` parameter
-        var accessControlType = accessControlPrefix.contains("public")
+        var accessorType = accessorPrefix.contains("public")
         if let publicAttribute = attributes?
             .first(where: { "\($0)".contains("public") })?
-            .expression.as(BooleanLiteralExprSyntax.self)?
-            .booleanLiteral {
-            accessControlType = "\(publicAttribute)" == "true"
+            .expression.as(BooleanLiteralExprSyntax.self)?.literal {
+            accessorType = "\(publicAttribute)" == "true"
         }
 
         var parameters = [String]()
@@ -146,9 +150,9 @@ struct InitMacro: MemberMacro {
             if let syntax = member.decl.as(VariableDeclSyntax.self),
                let bindings = syntax.bindings.as(PatternBindingListSyntax.self),
                let pattern = bindings.first?.as(PatternBindingSyntax.self),
-               let identifier = (pattern.pattern.as(IdentifierPatternSyntax.self))?.identifier,
-               let type = (pattern.typeAnnotation?.as(TypeAnnotationSyntax.self))?.type,
-               !(syntax.bindingKeyword.tokenKind == .keyword(.let) && pattern.initializer != nil) {
+               let identifier = pattern.pattern.as(IdentifierPatternSyntax.self)?.identifier,
+               let type = pattern.typeAnnotation?.as(TypeAnnotationSyntax.self)?.type,
+               !(syntax.bindingSpecifier.tokenKind == .keyword(.let) && pattern.initializer != nil) {
 
                 let shouldUnderscoreParameter = wildcards.contains("\(identifier)")
                 let identifierPrefix = "\(shouldUnderscoreParameter ? "_ " : "")"
@@ -158,27 +162,61 @@ struct InitMacro: MemberMacro {
 
                 var parameter = "\(identifierPrefix)\(identifier): \(typePrefix)\(type)"
                 if let defaultValue = defaults["\(identifier)"] {
-                    parameter += " = " + "\(defaultValue)"
+                    let value = defaultValue.containsPattern("\\(\\)\"")
+                        ? defaultValue.removePattern("\"(.*)\"")
+                        : defaultValue
+                    parameter += " = " + "\(value)"
                 } else if let initializer = pattern.initializer {
                     parameter += "\(initializer)"
                 }
 
-                let memberAccessControl = getAccessControls("", syntax.modifiers)
-                let memberAccessControlPrefix = (memberAccessControl.contains("static") ? "S" : "s") + "elf"
+                let memberAccessor = getModifiers("", syntax.modifiers)
+                let memberAccessorPrefix = (memberAccessor.contains("static") ? "S" : "s") + "elf"
 
-                let isComputedProperty = pattern.accessor?.is(CodeBlockSyntax.self) == true
-                let isUsingAccessControls = pattern.accessor?.is(AccessorBlockSyntax.self) == true
-                if !isComputedProperty, !isUsingAccessControls {
+                let isComputedProperty = pattern.accessorBlock?.is(CodeBlockSyntax.self) == true
+                let isUsingAccessors = pattern.accessorBlock?.is(AccessorBlockSyntax.self) == true
+                if !isComputedProperty, !isUsingAccessors {
                     parameters.append(parameter)
-                    assignments.append("\(memberAccessControlPrefix).\(identifier) = \(identifier)")
+                    assignments.append("\(memberAccessorPrefix).\(identifier) = \(identifier)")
                 }
             }
         }
 
-        return (parameters, assignments, accessControlType)
+        return (parameters, assignments, accessorType)
+    }
+}
+
+extension String {
+    func containsPattern(_ pattern: String = "Optional\\((.*)\\)") -> Bool {
+        extractPattern(pattern) != nil
     }
 
-    private static func getAttributes(
+    func removePattern(_ pattern: String = "Optional\\((.*)\\)") -> String {
+        if let match = extractPattern(pattern) {
+            if let range = Range(match.range(at: 1), in: self) {
+                return String(self[range])
+            }
+        }
+        return self
+    }
+
+    private func extractPattern(_ pattern: String = "Optional\\((.*)\\)") -> NSTextCheckingResult? {
+        do {
+            let regex = try NSRegularExpression(
+                pattern: pattern
+            )
+            return regex.firstMatch(
+                in: self,
+                options: [],
+                range: NSRange(location: 0, length: utf16.count)
+            )
+        } catch { }
+        return nil
+    }
+}
+
+private extension AttachedMacro {
+    static func getAttributes(
         _ attributes: AttributeListSyntax?,
         _ key: String
     ) -> AttributeSyntax? {
@@ -187,16 +225,16 @@ struct InitMacro: MemberMacro {
             .as(AttributeSyntax.self)
     }
 
-    private static func getAccessControls(
-        _ initialAccessControl: String,
-        _ modifiers: ModifierListSyntax?
+    static func getModifiers(
+        _ initialModifiers: String,
+        _ modifiers: DeclModifierListSyntax?
     ) -> String {
-        var initialAccessControl = initialAccessControl
+        var initialModifiers = initialModifiers
         modifiers?.forEach {
-            if let accessControlType = $0.as(DeclModifierSyntax.self)?.name {
-                initialAccessControl += "\(accessControlType.text) "
+            if let accessorType = $0.as(DeclModifierSyntax.self)?.name {
+                initialModifiers += "\(accessorType.text) "
             }
         }
-        return initialAccessControl
+        return initialModifiers
     }
 }

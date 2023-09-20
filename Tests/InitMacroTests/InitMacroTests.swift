@@ -35,6 +35,7 @@ final class InitMacroTests: XCTestCase {
                 let age: Int
                 let cash: Double?
                 let name: String
+
                 public init(
                     age: Int,
                     cash: Double?,
@@ -69,6 +70,7 @@ final class InitMacroTests: XCTestCase {
                 let age: Int
                 let cash: Double?
                 let name: String
+
                 public init(
                     age: Int = 21,
                     cash: Double? = nil,
@@ -103,6 +105,7 @@ final class InitMacroTests: XCTestCase {
                 let age: Int
                 let cash: Double?
                 let name: String
+
                 public init(
                     age: Int,
                     _ cash: Double?,
@@ -140,6 +143,7 @@ final class InitMacroTests: XCTestCase {
                 let age: Int
                 let cash: Double?
                 let name: String
+
                 public init(
                     _ age: Int = 21,
                     _ cash: Double?,
@@ -180,6 +184,7 @@ final class InitMacroTests: XCTestCase {
                 public let removeTraits: AccessibilityTraits
 
                 public static let unknown = "unknown"
+
                 public init(
                     id: String,
                     description: String,
@@ -218,6 +223,7 @@ final class InitMacroTests: XCTestCase {
                 public let description: String
                 public let traits: AccessibilityTraits
                 public let action: () -> Void
+
                 public init(
                     id: String,
                     description: String,
@@ -256,6 +262,7 @@ final class InitMacroTests: XCTestCase {
                 public let description: String
                 public let traits: AccessibilityTraits
                 public let action: (() -> Void)?
+
                 public init(
                     id: String,
                     description: String,
@@ -290,6 +297,7 @@ final class InitMacroTests: XCTestCase {
             public struct RandomPoint {
                 let x: Int
                 var y: Int
+
                 public init(
                     x: Int,
                     y: Int
@@ -321,9 +329,8 @@ final class InitMacroTests: XCTestCase {
             public struct RandomPoint {
                 let x: Int
                 var y: Int
-                var xPlusY: Int {
-                    x + y
-                }
+                var xPlusY: Int { x + y }
+
                 init(
                     x: Int,
                     y: Int
@@ -372,6 +379,7 @@ final class InitMacroTests: XCTestCase {
                         displayResult = newValue
                     }
                 }
+
                 init(
                     x: Int,
                     y: Int,
@@ -422,6 +430,7 @@ final class InitMacroTests: XCTestCase {
                         displayResult = newValue
                     }
                 }
+
                 init(
                     x: Int,
                     y: Int,
@@ -456,6 +465,7 @@ final class InitMacroTests: XCTestCase {
                 let x: Int
                 var y: Int
                 var displayResult: Bool
+
                 init(
                     x: Int,
                     y: Int,
@@ -490,6 +500,7 @@ final class InitMacroTests: XCTestCase {
                 let x: Int = 5
                 var y: Int
                 var displayResult: Bool = true
+
                 init(
                     y: Int,
                     displayResult: Bool = true
