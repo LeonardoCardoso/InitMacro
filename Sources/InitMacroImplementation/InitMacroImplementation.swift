@@ -147,7 +147,8 @@ struct InitMacro: MemberMacro {
                let bindings = syntax.bindings.as(PatternBindingListSyntax.self),
                let pattern = bindings.first?.as(PatternBindingSyntax.self),
                let identifier = (pattern.pattern.as(IdentifierPatternSyntax.self))?.identifier,
-               let type = (pattern.typeAnnotation?.as(TypeAnnotationSyntax.self))?.type {
+               let type = (pattern.typeAnnotation?.as(TypeAnnotationSyntax.self))?.type,
+               !(syntax.bindingKeyword.tokenKind == .keyword(.let) && pattern.initializer != nil) {
 
                 let shouldUnderscoreParameter = wildcards.contains("\(identifier)")
                 let identifierPrefix = "\(shouldUnderscoreParameter ? "_ " : "")"
@@ -158,6 +159,8 @@ struct InitMacro: MemberMacro {
                 var parameter = "\(identifierPrefix)\(identifier): \(typePrefix)\(type)"
                 if let defaultValue = defaults["\(identifier)"] {
                     parameter += " = " + "\(defaultValue)"
+                } else if let initializer = pattern.initializer {
+                    parameter += "\(initializer)"
                 }
 
                 let memberAccessControl = getAccessControls("", syntax.modifiers)
