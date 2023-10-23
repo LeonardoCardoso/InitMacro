@@ -1,5 +1,7 @@
 # InitMacro
 
+Read my article on Macros in [TradeRepublic](https://github.com/traderepublic)'s engineering blog: [Get Ready for Swift Macros](https://engineering.traderepublic.com/get-ready-for-swift-macros-fe21d3867e02)
+
 This repo showcases a Swift Macro implementation that generates initializers for classes and structs. It's intended as a playground to explore this fantastic new feature in Swift.
 
 I'm not an expert, so this implementation might not cover all possible cases. If you come across an unsupported case, please create an issue to let us know.
