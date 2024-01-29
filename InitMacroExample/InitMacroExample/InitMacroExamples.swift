@@ -24,3 +24,9 @@ public struct Vector {
     var y: Double
     var z: Double
 }
+
+@Init
+public struct Car {
+    var wheels: Int = 4
+    var seats: Int = 5
+}
