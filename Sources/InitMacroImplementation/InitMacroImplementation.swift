@@ -125,7 +125,7 @@ struct InitMacro: MemberMacro {
         if let wildcardsAttributes = attributes?
             .first(where: { "\($0)".contains("wildcards") })?
             .expression.as(ArrayExprSyntax.self)?
-            .elements.as(ArrayElementListSyntax.self) {
+            .elements {
             for attribute in wildcardsAttributes {
                 if let key = attribute.expression.as(StringLiteralExprSyntax.self)?
                     .segments.first?.as(StringSegmentSyntax.self)?
@@ -148,10 +148,10 @@ struct InitMacro: MemberMacro {
 
         for member in members {
             if let syntax = member.decl.as(VariableDeclSyntax.self),
-               let bindings = syntax.bindings.as(PatternBindingListSyntax.self),
-               let pattern = bindings.first?.as(PatternBindingSyntax.self),
+               case let bindings = syntax.bindings,
+               let pattern = bindings.first,
                let identifier = pattern.pattern.as(IdentifierPatternSyntax.self)?.identifier,
-               let type = pattern.typeAnnotation?.as(TypeAnnotationSyntax.self)?.type,
+               let type = pattern.typeAnnotation?.type,
                !(syntax.bindingSpecifier.tokenKind == .keyword(.let) && pattern.initializer != nil) {
 
                 let shouldUnderscoreParameter = wildcards.contains("\(identifier)")
@@ -173,8 +173,8 @@ struct InitMacro: MemberMacro {
                 let memberAccessor = getModifiers("", syntax.modifiers)
                 let memberAccessorPrefix = (memberAccessor.contains("static") ? "S" : "s") + "elf"
 
-                let isComputedProperty = pattern.accessorBlock?.is(CodeBlockSyntax.self) == true
-                let isUsingAccessors = pattern.accessorBlock?.is(AccessorBlockSyntax.self) == true
+                let isComputedProperty = CodeBlockSyntax(pattern.accessorBlock) != nil
+                let isUsingAccessors = AccessorBlockSyntax(pattern.accessorBlock) != nil
                 if !isComputedProperty, !isUsingAccessors {
                     parameters.append(parameter)
                     assignments.append("\(memberAccessorPrefix).\(identifier) = \(identifier)")
@@ -231,9 +231,8 @@ private extension AttachedMacro {
     ) -> String {
         var initialModifiers = initialModifiers
         modifiers?.forEach {
-            if let accessorType = $0.as(DeclModifierSyntax.self)?.name {
-                initialModifiers += "\(accessorType.text) "
-            }
+            let accessorType = $0.name
+            initialModifiers += "\(accessorType.text) "
         }
         return initialModifiers
     }
