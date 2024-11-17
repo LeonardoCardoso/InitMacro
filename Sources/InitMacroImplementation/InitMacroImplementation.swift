@@ -174,7 +174,7 @@ struct InitMacro: MemberMacro {
                 let memberAccessorPrefix = (memberAccessor.contains("static") ? "S" : "s") + "elf"
 
                 let isComputedProperty = CodeBlockSyntax(pattern.accessorBlock) != nil
-                let isUsingAccessors = AccessorBlockSyntax(pattern.accessorBlock) != nil
+                let isUsingAccessors = pattern.accessorBlock != nil
                 if !isComputedProperty, !isUsingAccessors {
                     parameters.append(parameter)
                     assignments.append("\(memberAccessorPrefix).\(identifier) = \(identifier)")
